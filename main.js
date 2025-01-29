@@ -55,15 +55,24 @@ app.on("ready", () => {
         // search without req
         return items.find(item => item.name === name);
       };
-
+      
+      // Function to find a type of jewel
       const jewelType = (itemName) => {
         let jT = itemName.lines[itemName.lines.length - 1].trim();
         if(jT === 'Ruby') return 'Rubies'
         if(jT === 'Sapphire') return 'Sapphires'
         if(jT === 'Emerald') return 'Emeralds'
       }
+      
+      // Function to mask numbers in affixes
+      const maskNumbersInAffixes = (item) => {
+        item.affixes = item.affixes.map(affix => affix.replace(/^\+/, '').replace(/\d+(\.\d+)?(?=%)?/g, '#'));
+        return item.affixes.map(affix =>
+          affix.toLowerCase().replace(/\r$/, '').replace(/\s+/g, '') // Remove \r at end & all spaces
+        );
+      }
 
-        // Simulate Ctrl+C using Nut.js
+      // Simulate Ctrl+C using Nut.js
       await keyboard.pressKey(Key.LeftControl); // Press Ctrl
       await keyboard.pressKey(Key.C); // Press C
       await keyboard.releaseKey(Key.C); // Release C
@@ -109,6 +118,105 @@ app.on("ready", () => {
 
       // Load the desired webpage
     mainWindow.loadURL("https://poe2db.tw/" + result.link);
+
+    let maskedNumbersInAffixes = maskNumbersInAffixes(item);
+    console.log(maskedNumbersInAffixes);
+    let affixesObject = Object.fromEntries(maskedNumbersInAffixes.map((affix, index) => [index, affix]));
+
+
+    mainWindow.webContents.once("did-finish-load", () => {
+      mainWindow.webContents.executeJavaScript(`
+
+  const maskedNumbersInAffixes = ${JSON.stringify(affixesObject)};
+  console.log(maskedNumbersInAffixes);
+
+  const elements = document.querySelectorAll('.background-image.item-popup--poe2');
+  for (let i = 0; i < elements.length; i++) {
+    if (window.getComputedStyle(elements[i]).backgroundImage !== 'none') {
+      elements[i].style.backgroundImage = 'none';
+      break; // Exit loop after first match
+    }
+  }
+
+  function extractModData() {
+    const modData = {};
+    
+    document.querySelectorAll('.col-lg-6').forEach(section => {
+        const category = section.querySelector('.identify-title')?.textContent.trim();
+        if (!category) return;
+        
+        modData[category] = [];
+        
+        section.querySelectorAll('.mod-title').forEach(mod => {
+            const dataTarget = mod.getAttribute('data-bs-target');
+            
+            let textContent = [...mod.childNodes]
+                .filter(node => !node.classList || !node.classList.contains('float-end'))
+                .map(node => node.textContent.trim())
+                .join(' ');
+            
+            textContent = textContent.replace(/\\s+/g, '').trim().toLowerCase();
+            
+            if (dataTarget && textContent) {
+                modData[category].push({ dataTarget, text: textContent });
+            }
+        });
+    });
+    
+    return modData;
+  }
+
+  const findMatchingAffixes = (affixObject, affixData) => {
+  let matches = [];
+
+  // Convert the values of the first object into an array
+  const affixValues = Object.values(affixObject);
+
+  // Loop through Prefix and Suffix arrays
+  ["Prefix", "Suffix"].forEach(category => {
+    affixData[category].forEach(entry => {
+      // Check if the entry.text contains any affix value
+      affixValues.forEach(affix => {
+        if (entry.text.includes(affix)) {
+          matches.push({
+            dataTarget: entry.dataTarget,
+            text: entry.text,
+            matchedAffix: affix
+          });
+        }
+      });
+    });
+  });
+
+  return matches;
+};
+console.log(extractModData());
+
+console.log(findMatchingAffixes(maskedNumbersInAffixes,extractModData()));
+
+// Loop through each element in the array
+findMatchingAffixes(maskedNumbersInAffixes,extractModData()).forEach(affix => {
+  
+  // Find the element with a matching data-bs-target
+  console.log(affix.dataTarget);
+  let targetElement = document.querySelector(\`[data-bs-target="\${affix.dataTarget}"]\`);
+  console.log(targetElement);
+  // Check if target element was found
+  if (targetElement) {
+    console.log('Found target element:', targetElement);
+    
+    // Apply border and check if it's applied
+    targetElement.style.setProperty('border', '2px solid green', 'important');
+    console.log('Border applied:', targetElement.style.border);
+  } else {
+    console.log('Target element not found for data-bs-target:', affix.dataTarget);
+  }
+});
+
+
+  
+  `);
+    });
       
       console.log("req:" + req + 'req');
 
