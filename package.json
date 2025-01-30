@@ -1,10 +1,11 @@
 {
-  "name": "electron",
+  "name": "poe2modis",
   "version": "1.0.0",
   "main": "main.js",
   "type": "module",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder"
   },
   "keywords": [],
   "author": "",
@@ -12,10 +13,25 @@
   "description": "",
   "devDependencies": {
     "electron": "^34.0.1",
+    "electron-builder": "^25.1.8",
     "electron-rebuild": "^3.2.9"
   },
   "dependencies": {
     "@nut-tree-fork/nut-js": "^4.2.4",
-    "poe-item-parser": "^1.2.7"
+    "poe-item-parser": "^1.2.7",
+    "tesseract.js": "^6.0.0"
+  },
+  "build": {
+    "appId": "com.poe2.modis",
+    "productName": "Poe 2 Modis",
+    "mac": {
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   }
 }
