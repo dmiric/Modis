@@ -43,7 +43,6 @@ app.on("ready", () => {
   globalShortcut.register("Ctrl+Q", async () => {
     try {
       let item_text;
-      let clip_image;
 
       // Function to search for an item in the array
       const searchItem = (name, req = "") => {
@@ -110,7 +109,7 @@ app.on("ready", () => {
       item_text = clipboard.readText();
       console.log(item_text);
 
-      clip_image = clipboard.readImage();
+      // image = clipboard.readImage();
 
       // Use PoE2ItemParser
       item = new PoE2ItemParser(item_text).getItem();
